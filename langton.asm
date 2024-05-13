@@ -6,6 +6,14 @@
 
                 #org 0x2000                     ; set origin
 
+                MIB 40, grid_w                  ; grid 40 cells wide
+                MIB 24, grid_h                  ; grid 24 cell high
+                MIB 10, cell_w                  ; cell 10 pixels wide
+                MIB 10, cell_h                  ; cell 10 pixels heigh
+                MIB 20, ant_x                   ; ant in middle of x
+                MIB 12, ant_y                   ; and in middle of y
+                MIB 0, ant_direction            ; ant facing 0 (north)
+
                 JAS _Clear                      ;
                 MIB 0x00, _XPos                 ;
                 MIB 0x00, _YPos                 ;
@@ -16,13 +24,28 @@
 
                 JPS _Prompt                     ;
 
-; draw grid
+; draw grid (400x240)
 
-draw_grid:      MIW 0x0000, xa                  ; grid is 400x240
-                MIB 10, ya                      ;
-                MIW 400, xb                     ;
-                MIB 10, yb                      ;
+draw_grid:      MIB 0xe6, current_row           ; set start row 230
+grid_row_loop:  MIW 0x0000, xa                  ; start x = 0
+                MBB current_row, ya             ; start y = current_row
+                MIW 0x0190, xb                  ; end x = 400
+                MBB current_row, yb             ; end y = current_row
+                JAS _Line                       ; draw line
+                SIB 0x0a, current_row           ; decrement current_row by 10
+                BNE grid_row_loop               ; loop if not zero
+
+                MIW 0x0186, current_col         ; set start col 390
+grid_col_loop:  MWV current_col, xa             ; start x = current_col
+                MIB 0x00, ya                    ; start y = 0
+                MWV current_col, xb             ; end x = current_col
+                MIB 0xf0, yb                    ; end y = 240
                 JAS _Line                       ;
+                SIW 0x0a, current_col           ; decrement current_col by 10
+                BNE grid_col_loop               ; loop if MSB not zero
+                LDB current_col                 ; Load LSB
+                CPI 0x00                        ; compare to zero
+                BNE grid_col_loop               ; loop if LSB not zero
                 RTS                             ;
 
 ; print carriage return
@@ -30,6 +53,8 @@ draw_grid:      MIW 0x0000, xa                  ; grid is 400x240
 cr:             LDI 0x0a                        ; carriage return
                 JAS _PrintChar                  ;
                 RTS                             ;
+
+        ;spin:   JPA spin                        ; DEBUG
 
 #mute
 
@@ -46,18 +71,22 @@ cr:             LDI 0x0a                        ; carriage return
 
 ; storage
 
-#org 0x0000
+#org 0x1000
 
-ant_x:          0xff                            ; ant x location
+ant_x:          0xffff                          ; ant x location
 ant_y:          0xff                            ; ant y location
 ant_direction:  0xff                            ; ant direction facing
 
-grid_w:         40                              ; grid width
-grid_h:         24                              ; grid height
-cell_w:         10                              ; cell width
-cell_h:         10                              ; cell height
+grid_w:         0xffff                          ; grid width
+grid_h:         0xff                            ; grid height
 
-#org 0x1000  grid:                              ; start of grid storage
+cell_w:         0xff                            ; cell width
+cell_h:         0xff                            ; cell height
+
+current_col:    0xffff                          ; draw grid routine col
+current_row:    0xff                            ; draw grid routine row
+
+grid:                                           ; start of grid storage
 
 ; OS API
 
