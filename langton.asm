@@ -6,8 +6,6 @@
 ; white cell : turn right, move forward, set black
 ; black cell : turn left, move forward, set white
 
-; TODO: draw_cells and draw_grid should start from top left
-
                 #org 0x2000                     ; set origin
 
                 MIW 0x00c8, ant_x               ; ant at x 200 pixels
@@ -28,26 +26,26 @@
 
 ; draw grid (400x240)
 
-                ; TODO: start at zero for x and y
-draw_grid:      MIB 0xe6, grid_current_y        ; set start y 230
-grid_row_loop:  MIW 0x0000, xa                  ; start x = 0
+draw_grid:      MIB 0x0a, grid_current_y        ; set start y 10
+grid_y_loop:    MIW 0x0000, xa                  ; start x = 0
                 MBB grid_current_y, ya          ; start y = grid_current_y
                 MIW 0x0190, xb                  ; end x = 400
                 MBB grid_current_y, yb          ; end y = grid_current_y
                 JAS _Line                       ; draw line
-                SIB 0x0a, grid_current_y        ; decrement grid_current_y by 10
-                BNE grid_row_loop               ; loop if not zero
+                AIB 0x0a, grid_current_y        ; increment grid_current_y by 10
+                CIB 0xf0, grid_current_y        ; compare to 240
+                BNE grid_y_loop                 ; loop if not zero
 
-                MIW 0x0186, grid_current_x      ; set start x 390
+                MIW 0x000a, grid_current_x      ; set start x 390 (0x0186)
 grid_col_loop:  MWV grid_current_x, xa          ; start x = grid_current_x
                 MIB 0x00, ya                    ; start y = 0
                 MWV grid_current_x, xb          ; end x = grid_current_x
                 MIB 0xf0, yb                    ; end y = 240
                 JAS _Line                       ;
-                SIW 0x0a, grid_current_x        ; decrement grid_current_x by 10
+                AIW 0x0a, grid_current_x        ; increment grid_current_x by 10
+                CIB 0x01, grid_current_x+1      ; compare MSB to 0x0186 MSB
                 BNE grid_col_loop               ; loop if MSB not zero
-                LDB grid_current_x              ; Load LSB
-                CPI 0x00                        ; compare to zero
+                CIB 0x90, grid_current_x        ; compare LSB to 0x0186 LSB (+10)
                 BNE grid_col_loop               ; loop if LSB not zero
                 RTS                             ;
 
@@ -68,10 +66,10 @@ cell_col_loop:  MWV grid_current_x, xa          ; set xa
                 CIB 0x01, grid_current_x+1      ; compare MSB to 0x0186 MSB
                 BNE cell_col_loop               ; continue loop
                 CIB 0x90, grid_current_x        ; compare LSB to 0x0186 LSB (+10)
-                BNE cell_col_loop               ; continue loop
+                BNE cell_col_loop               ; loop if MSB not zero
                 AIB 0x0a, grid_current_y        ; increment grid_current_y by 10
                 CIB 0xf0, grid_current_y        ; compare to 0xf0 (250)
-                BNE cell_row_loop               ; continue loop
+                BNE cell_row_loop               ; loop if LSB not zero
                 RTS                             ;
 
 ; draw ant at current location
