@@ -5,6 +5,8 @@
 ; white cell : turn right, move forward, set black
 ; black cell : turn left, move forward, set white
 
+; TODO: make it fast
+
                 #org 0x2000                     ; set origin
 
                 JAS clear_cells                 ; clear memory for cells
