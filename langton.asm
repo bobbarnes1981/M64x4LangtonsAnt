@@ -61,6 +61,9 @@ cell_col_loop:  MWV grid_current_x, xa          ; set xa
                 MBB grid_current_y, ya          ; set ya
                 AIW 0x05, ya                    ; add 5 to ya
                 JAS _SetPixel                   ; set pixel
+                ; TODO: check grid+cell_count
+                ;       use _SetPixel or _ClearPixel
+                INW cell_count                  ; increment cell count
                 AIW 0x0a, grid_current_x        ; increment grid_current_x by 10
                 CIB 0x01, grid_current_x+1      ; compare MSB to 0x0186 MSB
                 BNE cell_col_loop               ; continue loop
