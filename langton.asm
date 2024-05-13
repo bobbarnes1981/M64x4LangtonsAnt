@@ -1,8 +1,12 @@
 
 ; Langton's ant
+; viewport 400x240 pixels
+; 40*24 cells = 960
 ; RL rule set
 ; white cell : turn right, move forward, set black
 ; black cell : turn left, move forward, set white
+
+; TODO: draw_cells and draw_grid should start from top left
 
                 #org 0x2000                     ; set origin
 
@@ -17,11 +21,14 @@
                 JAS cr                          ;
 
                 JAS draw_grid                   ;
+                JAS draw_cells                  ;
                 JAS draw_ant                    ;
+
                 JPS _Prompt                     ;
 
 ; draw grid (400x240)
 
+                ; TODO: start at zero for x and y
 draw_grid:      MIB 0xe6, grid_current_y        ; set start y 230
 grid_row_loop:  MIW 0x0000, xa                  ; start x = 0
                 MBB grid_current_y, ya          ; start y = grid_current_y
@@ -42,6 +49,24 @@ grid_col_loop:  MWV grid_current_x, xa          ; start x = grid_current_x
                 LDB grid_current_x              ; Load LSB
                 CPI 0x00                        ; compare to zero
                 BNE grid_col_loop               ; loop if LSB not zero
+                RTS                             ;
+
+; draw the cells
+
+draw_cells:     MIW 0x0000, cell_count          ; current cell number
+                MIB 0x00, grid_current_y        ; start at y 0
+cell_row_loop:  MIW 0x0000, grid_current_x      ; start at x 0
+cell_col_loop:  MWV grid_current_x, xa          ; set xa
+                AIB 0x05, xa                    ; add 5 to xa
+                MBB grid_current_y, ya          ; set ya
+                AIW 0x05, ya                    ; add 5 to ya
+                JAS _SetPixel                   ; set pixel
+                AIW 0x0a, grid_current_x        ; increment grid_current_x by 10
+                CIB 0x01, grid_current_x+1      ; compare MSB to 0x0186 MSB
+                BNE cell_col_loop               ; continue loop
+                CIB 0x90, grid_current_x        ; compare LSB to 0x0186 LSB (+10)
+                BNE cell_col_loop               ; continue loop
+                ; TODO: inc row and continue loop
                 RTS                             ;
 
 ; draw ant at current location
@@ -86,8 +111,9 @@ ant_direction:  0xff                            ; ant direction facing
 
 grid_current_x: 0xffff                          ; draw grid routine x
 grid_current_y: 0xff                            ; draw grid routine y
+cell_count:     0xffff                          ; count number of cells
 
-grid:                                           ; start of grid storage
+grid:                                           ; start of grid storage (960 bytes)
 
 ; OS API
 
