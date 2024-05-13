@@ -21,7 +21,7 @@
                 JAS cr                          ;
 
                 JAS draw_grid                   ;
-
+                JAS draw_ant                    ;
                 JPS _Prompt                     ;
 
 ; draw grid (400x240)
@@ -46,6 +46,15 @@ grid_col_loop:  MWV current_col, xa             ; start x = current_col
                 LDB current_col                 ; Load LSB
                 CPI 0x00                        ; compare to zero
                 BNE grid_col_loop               ; loop if LSB not zero
+                RTS                             ;
+
+; draw ant at current location
+
+draw_ant:       MIW 0x00c9, xa                  ; left @ 200+1 pixels
+                MIB 0x79, ya                    ; top @ 120+1 pixels
+                MIW 0x0008, xb                  ; 8 wide
+                MIB 0x08, yb                    ; 8 high
+                JAS _Rect                       ; draw 'ant'
                 RTS                             ;
 
 ; print carriage return
