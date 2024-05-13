@@ -8,6 +8,9 @@
 
                 #org 0x2000                     ; set origin
 
+                ; DEBUG
+                MIB 0x01, 0x1019                ; set cell 0x0010 to white
+                
                 MIW 0x00c8, ant_x               ; ant at x 200 pixels
                 MIB 0x78, ant_y                 ; ant at y 120 pixels
                 MIB 0, ant_direction            ; ant facing 0 (north)
@@ -51,17 +54,21 @@ grid_col_loop:  MWV grid_current_x, xa          ; start x = grid_current_x
 
 ; draw the cells
 
-draw_cells:     MIW 0x0000, cell_count          ; current cell number
+draw_cells:     MIW 0x1009, cell_count          ; current cell array address WARNING: may need changing when storage is changed
                 MIB 0x00, grid_current_y        ; start at y 0
 cell_row_loop:  MIW 0x0000, grid_current_x      ; start at x 0
 cell_col_loop:  MWV grid_current_x, xa          ; set xa
                 AIB 0x05, xa                    ; add 5 to xa
                 MBB grid_current_y, ya          ; set ya
                 AIW 0x05, ya                    ; add 5 to ya
+                
+                LDR cell_count                  ; load cell info byte
+                CPI 0x00                        ; check if zero
+                BEQ cell_clr                    ;
                 JAS _SetPixel                   ; set pixel
-                ; TODO: check grid+cell_count
-                ;       use _SetPixel or _ClearPixel
-                INW cell_count                  ; increment cell count
+                JPA cell_inc_count              ;
+cell_clr:       JAS _ClearPixel                 ;
+cell_inc_count: INW cell_count                  ; increment cell count
                 AIW 0x0a, grid_current_x        ; increment grid_current_x by 10
                 CIB 0x01, grid_current_x+1      ; compare MSB to 0x0186 MSB
                 BNE cell_col_loop               ; continue loop
