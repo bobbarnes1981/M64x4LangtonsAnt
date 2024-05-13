@@ -6,12 +6,8 @@
 
                 #org 0x2000                     ; set origin
 
-                MIB 40, grid_w                  ; grid 40 cells wide
-                MIB 24, grid_h                  ; grid 24 cell high
-                MIB 10, cell_w                  ; cell 10 pixels wide
-                MIB 10, cell_h                  ; cell 10 pixels heigh
-                MIB 20, ant_x                   ; ant in middle of x
-                MIB 12, ant_y                   ; and in middle of y
+                MIW 0x00c8, ant_x               ; ant at x 200 pixels
+                MIB 0x78, ant_y                 ; ant at y 120 pixels
                 MIB 0, ant_direction            ; ant facing 0 (north)
 
                 JAS _Clear                      ;
@@ -26,32 +22,34 @@
 
 ; draw grid (400x240)
 
-draw_grid:      MIB 0xe6, current_row           ; set start row 230
+draw_grid:      MIB 0xe6, grid_current_y        ; set start y 230
 grid_row_loop:  MIW 0x0000, xa                  ; start x = 0
-                MBB current_row, ya             ; start y = current_row
+                MBB grid_current_y, ya          ; start y = grid_current_y
                 MIW 0x0190, xb                  ; end x = 400
-                MBB current_row, yb             ; end y = current_row
+                MBB grid_current_y, yb          ; end y = grid_current_y
                 JAS _Line                       ; draw line
-                SIB 0x0a, current_row           ; decrement current_row by 10
+                SIB 0x0a, grid_current_y        ; decrement grid_current_y by 10
                 BNE grid_row_loop               ; loop if not zero
 
-                MIW 0x0186, current_col         ; set start col 390
-grid_col_loop:  MWV current_col, xa             ; start x = current_col
+                MIW 0x0186, grid_current_x      ; set start x 390
+grid_col_loop:  MWV grid_current_x, xa          ; start x = grid_current_x
                 MIB 0x00, ya                    ; start y = 0
-                MWV current_col, xb             ; end x = current_col
+                MWV grid_current_x, xb          ; end x = grid_current_x
                 MIB 0xf0, yb                    ; end y = 240
                 JAS _Line                       ;
-                SIW 0x0a, current_col           ; decrement current_col by 10
+                SIW 0x0a, grid_current_x        ; decrement grid_current_x by 10
                 BNE grid_col_loop               ; loop if MSB not zero
-                LDB current_col                 ; Load LSB
+                LDB grid_current_x              ; Load LSB
                 CPI 0x00                        ; compare to zero
                 BNE grid_col_loop               ; loop if LSB not zero
                 RTS                             ;
 
 ; draw ant at current location
 
-draw_ant:       MIW 0x00c9, xa                  ; left @ 200+1 pixels
-                MIB 0x79, ya                    ; top @ 120+1 pixels
+draw_ant:       MWV ant_x, xa                   ; left = ant_x
+                INW xa                          ; increment x by 1
+                MBB ant_y, ya                   ; top = ant_y
+                INB ya                          ; increment y by 1
                 MIW 0x0008, xb                  ; 8 wide
                 MIB 0x08, yb                    ; 8 high
                 JAS _Rect                       ; draw 'ant'
@@ -86,14 +84,8 @@ ant_x:          0xffff                          ; ant x location
 ant_y:          0xff                            ; ant y location
 ant_direction:  0xff                            ; ant direction facing
 
-grid_w:         0xffff                          ; grid width
-grid_h:         0xff                            ; grid height
-
-cell_w:         0xff                            ; cell width
-cell_h:         0xff                            ; cell height
-
-current_col:    0xffff                          ; draw grid routine col
-current_row:    0xff                            ; draw grid routine row
+grid_current_x: 0xffff                          ; draw grid routine x
+grid_current_y: 0xff                            ; draw grid routine y
 
 grid:                                           ; start of grid storage
 
