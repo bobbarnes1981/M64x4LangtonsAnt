@@ -7,33 +7,33 @@
 
                 #org 0x2000                     ; set origin
 
-                JAS clear_cells                 ;
+                JAS clear_cells                 ; clear memory for cells
 
-                MIW 0x0000, max_steps           ;
+                MIW 0x0000, max_steps           ; set max steps to zero
                 MIW 0x00c8, ant_x               ; ant at x 200 pixels
                 MIB 0x78, ant_y                 ; ant at y 120 pixels
                 MIB 0, ant_direction            ; ant facing 0 (north)
 
-                JAS _Clear                      ;
-                JAS draw_grid                   ;
+                JAS _Clear                      ; clear display
+                JAS draw_grid                   ; draw the grid outside loop, it is slow
 
-loop:           MIB 0x00, _XPos                 ;
+                MIB 0x00, _XPos                 ;
                 MIB 0x00, _YPos                 ;
-                JPS _Print "Langton's Ant", 0   ;
+                JPS _Print "Langton's Ant", 0   ; print the title
                 LDI 0x0a                        ;
                 JAS _PrintChar                  ;
 
-                JAS draw_cells                  ;
+loop:           JAS draw_cells                  ; draw the cells
 
-                INW max_steps                   ;
+                INW max_steps                   ; increment steps
                 CIB 0x01, max_steps+1           ; 0x0182 MSB (386)
                 BNE loop                        ;
                 CIB 0x82, max_steps             ; 0x0182 LSB (386)
                 BNE loop                        ;
 
-                JPA _Prompt                     ;
+                JPA _Prompt                     ; exit
 
-; draw grid (400x240)
+; draw grid (400x240) 10 pixels between lines
 
 draw_grid:      MIB 0x0a, grid_current_y        ; set start y 10
 grid_y_loop:    MIW 0x0000, xa                  ; start x = 0
@@ -69,71 +69,59 @@ cell_col_loop:  MWV grid_current_x, xa          ; set xa
                 AIW 0x05, ya                    ; add 5 to ya
                 LDR cell_addr                   ; load cell info byte
                 CPI 0x00                        ; check if zero
-                BEQ cell_clr                    ;
-                MIB 0x00, cell_current          ; set current cell as black
+                BEQ cell_set                    ;
+cell_rst:       MIB 0x00, cell_current          ; set current cell was black
                 JAS _SetPixel                   ; set pixel
                 JPA maybe_ant                   ;
-cell_clr:       MIB 0x01, cell_current          ; set current cell as white
+cell_set:       MIB 0x01, cell_current          ; set current cell was white
                 JAS _ClearPixel                 ; clear pixel
-maybe_ant:      
-                CBB ant_x+1, grid_current_x+1   ; compare ant to current x grid MSB
+maybe_ant:      CBB ant_x+1, grid_current_x+1   ; compare ant to current x grid MSB
                 BNE no_ant                      ;
                 CBB ant_x, grid_current_x       ; compare ant to current x grid LSB
                 BNE no_ant                      ;
                 CBB ant_y, grid_current_y       ; compare ant to current y grid
                 BNE no_ant                      ;
-                
-                CIB 0x01, cell_current          ; check colour of cell
+check_cell:     CIB 0x01, cell_current          ; check colour of cell
                 BNE cell_white                  ; 
-cell_black:     MIR 0x01, cell_addr             ; update cell
-                ;JAS _Print "right", 0
+cell_black:     MIR 0x01, cell_addr             ; update cell to white
                 INB ant_direction               ; update ant direction (turn right)
                 CIB 0x04, ant_direction         ; compare for overflow
                 BNE draw_ant                    ; skip if not overflow
                 MIB 0x00, ant_direction         ; reset if overflow
                 JPA draw_ant                    ;
-cell_white:     MIR 0x00, cell_addr             ; update cell
-                ;JAS _Print "left", 0
+cell_white:     MIR 0x00, cell_addr             ; update cell toi black
                 DEB ant_direction               ; update ant direction (turn left)
                 CIB 0xff, ant_direction         ; compare for underflow
                 BNE draw_ant                    ; skip if not underflow
                 MIB 0x03, ant_direction         ; reset if underflow
-
-draw_ant:       MBB ant_x, xa                   ; draw the ant
-                MBB ant_x+1, xa+1               ;
-                INW xa                          ;
-                MBB ant_y, ya                   ;
-                INB ya                          ;
-                MIW 0x0008, xb                  ;
-                MIB 0x08, yb                    ;
-
-maybe_done:     JAS _Rect
-
-                MBB ant_x+1, nxt_x+1            ;
+draw_ant:       ;MBB ant_x, xa                   ; do not draw ant, needs to be undrawn somehow
+                ;MBB ant_x+1, xa+1               ;
+                ;INW xa                          ;
+                ;MBB ant_y, ya                   ;
+                ;INB ya                          ;
+                ;MIW 0x0008, xb                  ;
+                ;MIB 0x08, yb                    ;
+                ;JAS _Rect                       ;
+maybe_done:     MBB ant_x+1, nxt_x+1            ;
                 MBB ant_x, nxt_x                ;
                 MBB ant_y, nxt_y                ;
-
-ant_check_n:    CIB 0x00, ant_direction         ; north
+ant_check_n:    CIB 0x00, ant_direction         ; check if facing north
                 BNE ant_check_e                 ;
-                ;JAS _Print "north", 0
-                SIB 0x0a, nxt_y                 ; TODO: wrap
+                SIB 0x0a, nxt_y                 ; TODO: wrap screen
                 JPA no_ant                      ;
-ant_check_e:    CIB 0x01, ant_direction         ; east
+ant_check_e:    CIB 0x01, ant_direction         ; check if facing east
                 BNE ant_check_s                 ;
-                ;JAS _Print "east", 0
-                AIW 0x0a, nxt_x                 ; TODO: wrap
+                AIW 0x0a, nxt_x                 ; TODO: wrap screen
                 JPA no_ant                      ;
-ant_check_s:    CIB 0x02, ant_direction         ; south
+ant_check_s:    CIB 0x02, ant_direction         ; check if facing south
                 BNE ant_check_w                 ;
-                ;JAS _Print "south", 0
-                AIB 0x0a, nxt_y                 ; TODO: wrap
+                AIB 0x0a, nxt_y                 ; TODO: wrap screen
                 JPA no_ant                      ;
-ant_check_w:    CIB 0x03, ant_direction         ; west, we shouldn't really need to check
+ant_check_w:    CIB 0x03, ant_direction         ; check if facing west, we shouldn't really need to check
                 BNE no_ant                      ;
-                ;JAS _Print "west", 0
-                SIW 0x0a, nxt_x                 ; TODO: wrap
-
-no_ant:         INW cell_addr                   ; increment cell address
+                SIW 0x0a, nxt_x                 ; TODO: wrap screen
+                JPA no_ant                      ;
+no_ant:         INW cell_addr                   ; increment cell address (pointer to cell info bytes)
                 AIW 0x0a, grid_current_x        ; increment grid_current_x by 10
                 CIB 0x01, grid_current_x+1      ; compare MSB to 0x0186 MSB
                 BNE cell_col_loop               ; continue loop
@@ -142,11 +130,9 @@ no_ant:         INW cell_addr                   ; increment cell address
                 AIB 0x0a, grid_current_y        ; increment grid_current_y by 10
                 CIB 0xf0, grid_current_y        ; compare to 0xf0 (250)
                 BNE cell_row_loop               ; loop if LSB not zero
-
-                MBB nxt_x+1, ant_x+1            ; move the ant
-                MBB nxt_x, ant_x                ;
-                MBB nxt_y, ant_y                ;
-
+move_ant:       MBB nxt_x+1, ant_x+1            ; move the ant x MSB
+                MBB nxt_x, ant_x                ; move the ant x LSB
+                MBB nxt_y, ant_y                ; move the ant y
                 RTS                             ;
 
 ; clear the memory to hold the cells (all black cells)
