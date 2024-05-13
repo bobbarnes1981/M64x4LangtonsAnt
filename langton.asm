@@ -66,7 +66,9 @@ cell_col_loop:  MWV grid_current_x, xa          ; set xa
                 BNE cell_col_loop               ; continue loop
                 CIB 0x90, grid_current_x        ; compare LSB to 0x0186 LSB (+10)
                 BNE cell_col_loop               ; continue loop
-                ; TODO: inc row and continue loop
+                AIB 0x0a, grid_current_y        ; increment grid_current_y by 10
+                CIB 0xf0, grid_current_y        ; compare to 0xf0 (250)
+                BNE cell_row_loop               ; continue loop
                 RTS                             ;
 
 ; draw ant at current location
