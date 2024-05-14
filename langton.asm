@@ -91,7 +91,7 @@ cell_black:     MIR 0x01, cell_addr             ; update cell to white
                 BNE draw_ant                    ; skip if not overflow
                 MIB 0x00, ant_direction         ; reset if overflow
                 JPA draw_ant                    ;
-cell_white:     MIR 0x00, cell_addr             ; update cell toi black
+cell_white:     MIR 0x00, cell_addr             ; update cell to black
                 DEB ant_direction               ; update ant direction (turn left)
                 CIB 0xff, ant_direction         ; compare for underflow
                 BNE draw_ant                    ; skip if not underflow
