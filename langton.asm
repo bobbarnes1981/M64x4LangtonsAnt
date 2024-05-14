@@ -96,15 +96,15 @@ cell_col_loop:  MWV grid_current_x, xa          ; set xa
                 AIW 0x05, ya                    ; add 5 to ya
                 LDR cell_addr                   ; load cell info byte
                 CPI 0x00                        ; check if zero
-                BNE cell_set                    ;
+                BEQ cell_b                      ;
 
                 ; check and store current cell state
 
-cell_rst:       MIB 0x01, cell_current          ; set current cell was black
-                JAS _ClearPixel                 ; set pixel black
-                JPA maybe_ant                   ;
-cell_set:       MIB 0x00, cell_current          ; set current cell was white
+cell_w:         MIB 0x01, cell_current          ; set current cell is white
                 JAS _SetPixel                   ; set pixel white
+                JPA maybe_ant                   ;
+cell_b:         MIB 0x00, cell_current          ; set current cell is black
+                JAS _ClearPixel                 ; set pixel black
                 JPA maybe_ant                   ;
 
                 ; check if current grid is where the ant is
@@ -118,19 +118,22 @@ maybe_ant:      CBB ant_x+1, grid_current_x+1   ; compare ant to current x grid 
 
                 ; check colour of cell and update ant direction
 
-check_cell:     CIB 0x01, cell_current          ; check colour of cell
-                BNE cell_white                  ; 
-cell_black:     MIR 0x01, cell_addr             ; update cell to white
-                DEB ant_direction               ; update ant direction (turn left)
-                CIB 0xff, ant_direction         ; compare for underflow
-                BNE draw_ant                    ; skip if not underflow
-                MIB 0x03, ant_direction         ; reset if underflow
-                JPA draw_ant                    ;
+check_cell:     CIB 0x00, cell_current          ; check colour of cell
+                BEQ cell_black                  ;
+
 cell_white:     MIR 0x00, cell_addr             ; update cell to black
                 INB ant_direction               ; update ant direction (turn right)
                 CIB 0x04, ant_direction         ; compare for overflow
                 BNE draw_ant                    ; skip if not overflow
                 MIB 0x00, ant_direction         ; reset if overflow
+
+                JPA draw_ant                    ;
+
+cell_black:     MIR 0x01, cell_addr             ; update cell to white
+                DEB ant_direction               ; update ant direction (turn left)
+                CIB 0xff, ant_direction         ; compare for underflow
+                BNE draw_ant                    ; skip if not underflow
+                MIB 0x03, ant_direction         ; reset if underflow
 
                 ; draw the ant
 
