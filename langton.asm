@@ -48,16 +48,16 @@ grid_y_loop:    MIW 0x0000, xa                  ; start x = 0
                 BNE grid_y_loop                 ; loop if not zero
 
                 MIW 0x000a, grid_current_x      ; set start x 390 (0x0186)
-grid_col_loop:  MWV grid_current_x, xa          ; start x = grid_current_x
+grid_x_loop:    MWV grid_current_x, xa          ; start x = grid_current_x
                 MIB 0x00, ya                    ; start y = 0
                 MWV grid_current_x, xb          ; end x = grid_current_x
                 MIB 0xf0, yb                    ; end y = 240
                 JAS _Line                       ;
                 AIW 0x0a, grid_current_x        ; increment grid_current_x by 10
                 CIB 0x01, grid_current_x+1      ; compare MSB to 0x0186 MSB
-                BNE grid_col_loop               ; loop if MSB not zero
+                BNE grid_x_loop                 ; loop if MSB not zero
                 CIB 0x90, grid_current_x        ; compare LSB to 0x0186 LSB (+10)
-                BNE grid_col_loop               ; loop if LSB not zero
+                BNE grid_x_loop                 ; loop if LSB not zero
                 RTS                             ;
 
 ; draw the cells
