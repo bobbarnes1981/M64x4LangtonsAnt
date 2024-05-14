@@ -1,70 +1,95 @@
+
+; *********************************************************************************************
 ; Langton's ant
+; *********************************************************************************************
+
+; *********************************************************************************************
 ; viewport 400x240 pixels
 ; 40*24 cells = 960
 ; RL rule set
 ; white cell : turn right, move forward, set black
 ; black cell : turn left, move forward, set white
+; *********************************************************************************************
 
-; TODO: make it fast
+; *********************************************************************************************
+; TODO: make it fast, maybe only update a cell when we change the value
+; *********************************************************************************************
+
+; *********************************************************************************************
+; Start
+; *********************************************************************************************
 
                 #org 0x2000                     ; set origin
 
                 JAS clear_cells                 ; clear memory for cells
 
                 MIW 0x0000, max_steps           ; set max steps to zero
-                MIW 0x00c8, ant_x               ; ant at x 200 pixels
-                MIB 0x78, ant_y                 ; ant at y 120 pixels
+                MIW 0x00c8, ant_x               ; ant at x=200 pixels
+                MIB 0x78, ant_y                 ; ant at y=120 pixels
                 MIB 0, ant_direction            ; ant facing 0 (north)
 
                 JAS _Clear                      ; clear display
-                JAS draw_grid                   ; draw the grid outside loop, it is slow
+                JAS draw_grid                   ; draw the grid outside loop, it is slow/flickers
 
-                MIB 0x00, _XPos                 ;
-                MIB 0x00, _YPos                 ;
+                MIB 0x00, _XPos                 ; set print to x=0
+                MIB 0x00, _YPos                 ; set print to y=0
                 JPS _Print "Langton's Ant", 0   ; print the title
-                LDI 0x0a                        ;
-                JAS _PrintChar                  ;
+                LDI 0x0a                        ; load carriage return
+                JAS _PrintChar                  ; print carriage return
 
-loop:           JAS draw_cells                  ; draw the cells
+loop:           JAS draw_cells                  ; draw the cells and do the ant logic
 
                 INW max_steps                   ; increment steps
-                CIB 0x01, max_steps+1           ; 0x0182 MSB (386)
-                BNE loop                        ;
-                CIB 0x82, max_steps             ; 0x0182 LSB (386)
-                BNE loop                        ;
+                CIB 0x01, max_steps+1           ; check 0x0182 MSB (386)
+                BNE loop                        ; continue loop
+                CIB 0x82, max_steps             ; check 0x0182 LSB (386)
+                BNE loop                        ; continue loop
 
                 JPA _Prompt                     ; exit
 
-; draw grid (400x240) 10 pixels between lines
+; *********************************************************************************************
+; draw grid subroutine : 400x240 pixels 10 pixels between lines
+; *********************************************************************************************
 
-draw_grid:      MIB 0x0a, grid_current_y        ; set start y 10
-grid_y_loop:    MIW 0x0000, xa                  ; start x = 0
-                MBB grid_current_y, ya          ; start y = grid_current_y
-                MIW 0x0190, xb                  ; end x = 400
-                MBB grid_current_y, yb          ; end y = grid_current_y
+draw_grid:
+
+                MIB 0x0a, grid_current_y        ; set current y to 10
+grid_y_loop:    MIW 0x0000, xa                  ; set line start x = 0
+                MBB grid_current_y, ya          ; set line start y = grid_current_y
+                MIW 0x0190, xb                  ; set line end x = 400
+                MBB grid_current_y, yb          ; set line end y = grid_current_y
                 JAS _Line                       ; draw line
                 AIB 0x0a, grid_current_y        ; increment grid_current_y by 10
-                CIB 0xf0, grid_current_y        ; compare to 240
+                CIB 0xf0, grid_current_y        ; compare to 0xf0 (decimal 240)
                 BNE grid_y_loop                 ; loop if not zero
 
-                MIW 0x000a, grid_current_x      ; set start x 390 (0x0186)
-grid_x_loop:    MWV grid_current_x, xa          ; start x = grid_current_x
-                MIB 0x00, ya                    ; start y = 0
-                MWV grid_current_x, xb          ; end x = grid_current_x
-                MIB 0xf0, yb                    ; end y = 240
-                JAS _Line                       ;
+                MIW 0x000a, grid_current_x      ; set current x to 10
+grid_x_loop:    MWV grid_current_x, xa          ; set line start x = grid_current_x
+                MIB 0x00, ya                    ; set line start y = 0
+                MWV grid_current_x, xb          ; set line end x = grid_current_x
+                MIB 0xf0, yb                    ; set line end y = 240
+                JAS _Line                       ; draw line
                 AIW 0x0a, grid_current_x        ; increment grid_current_x by 10
-                CIB 0x01, grid_current_x+1      ; compare MSB to 0x0186 MSB
+                CIB 0x01, grid_current_x+1      ; compare MSB to 0x0186 MSB (+10) (decimal 390)
                 BNE grid_x_loop                 ; loop if MSB not zero
-                CIB 0x90, grid_current_x        ; compare LSB to 0x0186 LSB (+10)
+                CIB 0x90, grid_current_x        ; compare LSB to 0x0186 LSB (+10) (decimal 390)
                 BNE grid_x_loop                 ; loop if LSB not zero
+
                 RTS                             ;
 
-; draw the cells
+; *********************************************************************************************
+; draw the cells subroutine : draw cell content and do the ant logic
+; *********************************************************************************************
 
 draw_cells:     MIW 0x1100, cell_addr           ; current cell array address
                 MIB 0x00, grid_current_y        ; start at y 0
+
+                ; start of row loop
+
 cell_row_loop:  MIW 0x0000, grid_current_x      ; start at x 0
+
+                ; start of col loop
+
 cell_col_loop:  MWV grid_current_x, xa          ; set xa
                 AIB 0x05, xa                    ; add 5 to xa
                 MBB grid_current_y, ya          ; set ya
@@ -72,17 +97,27 @@ cell_col_loop:  MWV grid_current_x, xa          ; set xa
                 LDR cell_addr                   ; load cell info byte
                 CPI 0x00                        ; check if zero
                 BNE cell_set                    ;
+
+                ; check and store current cell state
+
 cell_rst:       MIB 0x01, cell_current          ; set current cell was black
                 JAS _ClearPixel                 ; set pixel black
                 JPA maybe_ant                   ;
 cell_set:       MIB 0x00, cell_current          ; set current cell was white
                 JAS _SetPixel                   ; set pixel white
+                JPA maybe_ant                   ;
+
+                ; check if current grid is where the ant is
+
 maybe_ant:      CBB ant_x+1, grid_current_x+1   ; compare ant to current x grid MSB
                 BNE no_ant                      ;
                 CBB ant_x, grid_current_x       ; compare ant to current x grid LSB
                 BNE no_ant                      ;
                 CBB ant_y, grid_current_y       ; compare ant to current y grid
                 BNE no_ant                      ;
+
+                ; check colour of cell and update ant direction
+
 check_cell:     CIB 0x01, cell_current          ; check colour of cell
                 BNE cell_white                  ; 
 cell_black:     MIR 0x01, cell_addr             ; update cell to white
@@ -96,6 +131,9 @@ cell_white:     MIR 0x00, cell_addr             ; update cell to black
                 CIB 0x04, ant_direction         ; compare for overflow
                 BNE draw_ant                    ; skip if not overflow
                 MIB 0x00, ant_direction         ; reset if overflow
+
+                ; draw the ant
+
 draw_ant:       ;MBB ant_x, xa                   ; do not draw ant, needs to be undrawn somehow
                 ;MBB ant_x+1, xa+1               ;
                 ;INW xa                          ;
@@ -104,9 +142,15 @@ draw_ant:       ;MBB ant_x, xa                   ; do not draw ant, needs to be 
                 ;MIW 0x0008, xb                  ;
                 ;MIB 0x08, yb                    ;
                 ;JAS _Rect                       ;
+
+                ; copy the ant location
+
 maybe_done:     MBB ant_x+1, nxt_x+1            ;
                 MBB ant_x, nxt_x                ;
                 MBB ant_y, nxt_y                ;
+
+                ; check the ant direction and move the ant
+
 ant_check_n:    CIB 0x00, ant_direction         ; check if facing north
                 BNE ant_check_e                 ;
                 SIB 0x0a, nxt_y                 ; TODO: wrap screen
@@ -123,40 +167,61 @@ ant_check_w:    CIB 0x03, ant_direction         ; check if facing west, we shoul
                 BNE no_ant                      ;
                 SIW 0x0a, nxt_x                 ; TODO: wrap screen
                 JPA no_ant                      ;
+
+                ; increment the cell address pointer and check if we need to continue the loop
+
 no_ant:         INW cell_addr                   ; increment cell address (pointer to cell info bytes)
+
+                ; end of col loop
+
                 AIW 0x0a, grid_current_x        ; increment grid_current_x by 10
                 CIB 0x01, grid_current_x+1      ; compare MSB to 0x0186 MSB
                 BNE cell_col_loop               ; continue loop
                 CIB 0x90, grid_current_x        ; compare LSB to 0x0186 LSB (+10)
                 BNE cell_col_loop               ; loop if MSB not zero
+
+                ; end of row loop
+
                 AIB 0x0a, grid_current_y        ; increment grid_current_y by 10
                 CIB 0xf0, grid_current_y        ; compare to 0xf0 (250)
                 BNE cell_row_loop               ; loop if LSB not zero
+
+                ; update the ant location after the loop is finished
+
 move_ant:       MBB nxt_x+1, ant_x+1            ; move the ant x MSB
                 MBB nxt_x, ant_x                ; move the ant x LSB
                 MBB nxt_y, ant_y                ; move the ant y
+
                 RTS                             ;
 
+; *********************************************************************************************
 ; clear the memory to hold the cells (all black cells)
+; *********************************************************************************************
 
 clear_cells:    MIW 0x1100, cell_addr           ; start form beginning of grid ram
                 MIB 0x00, grid_current_y        ; start at y 0
 clear_row_loop: MIW 0x0000, grid_current_x      ; start at x 0
 clear_col_loop: MIR 0x00, cell_addr             ; set byte to 0x00
-                INW cell_addr
+                INW cell_addr                   ; increment cell address
                 AIW 0x0a, grid_current_x        ; increment grid_current_x by 10
-                CIB 0x01, grid_current_x+1      ; compare MSB to 0x0186 MSB
-                BNE clear_col_loop              ; continue loop
-                CIB 0x90, grid_current_x        ; compare LSB to 0x0186 LSB (+10)
+                CIB 0x01, grid_current_x+1      ; compare MSB to 0x0186 MSB (+10) (decimal 400)
                 BNE clear_col_loop              ; loop if MSB not zero
+                CIB 0x90, grid_current_x        ; compare LSB to 0x0186 LSB (+10) (decimal 400)
+                BNE clear_col_loop              ; loop if LSB not zero
                 AIB 0x0a, grid_current_y        ; increment grid_current_y by 10
                 CIB 0xf0, grid_current_y        ; compare to 0xf0 (250)
-                BNE clear_row_loop              ; loop if LSB not zero
+                BNE clear_row_loop              ; loop if not zero
                 RTS
+
+; *********************************************************************************************
+; Data section
+; *********************************************************************************************
 
 #mute
 
+; *********************************************************************************************
 ; OS labels
+; *********************************************************************************************
 
 #org 0x0080     xa: steps: 0xffff               ; zero-page graphics interface (OS_SetPixel, OS_ClearPixel, OS_Line, OS_Rect)
                 ya:        0xff
@@ -167,7 +232,9 @@ clear_col_loop: MIR 0x00, cell_addr             ; set byte to 0x00
                 bit:       0xff
                 err:       0xffff
 
+; *********************************************************************************************
 ; storage
+; *********************************************************************************************
 
 #org 0x1000
 
@@ -183,13 +250,15 @@ grid_current_y: 0xff                            ; draw grid routine y
 cell_addr:      0xffff                          ; cell address
 cell_current:   0xff
 
-max_steps:      0xffff
+max_steps:      0xffff                          ; step counter
 
 #org 0x1100
 
 grid:                                           ; start of grid storage (960 bytes)
 
+; *********************************************************************************************
 ; OS API
+; *********************************************************************************************
 
 #org 0xf018     _ReadLine:                      ; Reads a command line into _ReadBuffer
 #org 0xf030     _ClearVRAM:                     ; Clears the video RAM including blanking areas
