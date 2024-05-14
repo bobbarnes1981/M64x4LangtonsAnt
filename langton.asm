@@ -158,7 +158,8 @@ maybe_done:     MBB ant_x+1, nxt_x+1            ;
 
 ant_check_n:    CIB 0x00, ant_direction         ; check if facing north
                 BNE ant_check_e                 ;
-                SIB 0x0a, nxt_y                 ;
+                SIB 0x0a, nxt_y                 ; decrement y by 10
+                ; wrap screen
                 CIB 0xf6, nxt_y                 ; is y 0xf6 (0-10) ?
                 BNE no_ant                      ;
                 MIB 0xe6, nxt_y                 ; set next y to 0xe6 (230)
@@ -166,7 +167,8 @@ ant_check_n:    CIB 0x00, ant_direction         ; check if facing north
 
 ant_check_e:    CIB 0x01, ant_direction         ; check if facing east
                 BNE ant_check_s                 ;
-                AIW 0x0a, nxt_x                 ;
+                AIW 0x0a, nxt_x                 ; increment x by 10
+                ; wrap screen
                 CIB 0x01, nxt_x+1               ; is x+1 0x01 MSB of 0x190 (400)
                 BNE no_ant                      ;
                 CIB 0x90, nxt_x                 ; is x 0x90 LSB of 0x0190 (400)
@@ -176,7 +178,8 @@ ant_check_e:    CIB 0x01, ant_direction         ; check if facing east
 
 ant_check_s:    CIB 0x02, ant_direction         ; check if facing south
                 BNE ant_check_w                 ;
-                AIB 0x0a, nxt_y                 ;
+                AIB 0x0a, nxt_y                 ; increment y by 10
+                ; wrap screen
                 CIB 0xf0, nxt_y                 ; is y 0xf0 (240) ?
                 BNE no_ant                      ;
                 MIB 0x00, nxt_y                 ; set next y to 0x00 (0)
@@ -184,7 +187,8 @@ ant_check_s:    CIB 0x02, ant_direction         ; check if facing south
 
 ant_check_w:    CIB 0x03, ant_direction         ; check if facing west, we shouldn't really need to check
                 BNE no_ant                      ;
-                SIW 0x0a, nxt_x                 ;
+                SIW 0x0a, nxt_x                 ; decrement x by 10
+                ; wrap screen
                 CIB 0xff, nxt_x+1               ; is x+1 0xff MSB of 0xfff6 (0-10)
                 BNE no_ant                      ;
                 CIB 0xf6, nxt_x                 ; is x 0xf6 LSB of 0xfff6 (0-10)
