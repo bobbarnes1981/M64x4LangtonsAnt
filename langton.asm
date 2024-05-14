@@ -100,10 +100,10 @@ cell_col_loop:  MWV grid_current_x, xa          ; set xa
 
                 ; check and store current cell state
 
-cell_rst:       MIB 0x01, cell_current          ; set current cell was black
+cell_rst:       MIB 0x01, cell_current          ; set current cell was white
                 JAS _ClearPixel                 ; set pixel black
                 JPA maybe_ant                   ;
-cell_set:       MIB 0x00, cell_current          ; set current cell was white
+cell_set:       MIB 0x00, cell_current          ; set current cell was black
                 JAS _SetPixel                   ; set pixel white
                 JPA maybe_ant                   ;
 
