@@ -157,7 +157,10 @@ maybe_done:     MBB ant_x+1, nxt_x+1            ;
 
 ant_check_n:    CIB 0x00, ant_direction         ; check if facing north
                 BNE ant_check_e                 ;
-                SIB 0x0a, nxt_y                 ; TODO: wrap screen
+                SIB 0x0a, nxt_y                 ;
+                CIB 0xf6, nxt_y                 ; is y 0xf6 (0-10) ?
+                BNE no_ant                      ;
+                MIB 0xe6, nxt_y                 ; set next y to 0xe6 (230)
                 JPA no_ant                      ;
 ant_check_e:    CIB 0x01, ant_direction         ; check if facing east
                 BNE ant_check_s                 ;
@@ -165,7 +168,10 @@ ant_check_e:    CIB 0x01, ant_direction         ; check if facing east
                 JPA no_ant                      ;
 ant_check_s:    CIB 0x02, ant_direction         ; check if facing south
                 BNE ant_check_w                 ;
-                AIB 0x0a, nxt_y                 ; TODO: wrap screen
+                AIB 0x0a, nxt_y                 ;
+                CIB 0xf0, nxt_y                 ; is y 0xf0 (240) ?
+                BNE no_ant                      ;
+                MIB 0x00, nxt_y                 ; set next y to 0x00 (0)
                 JPA no_ant                      ;
 ant_check_w:    CIB 0x03, ant_direction         ; check if facing west, we shouldn't really need to check
                 BNE no_ant                      ;
