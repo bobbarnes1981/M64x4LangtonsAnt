@@ -12,7 +12,7 @@
 ; *********************************************************************************************
 
 ; *********************************************************************************************
-; TODO: make it fast, maybe only update a cell when we change the value
+; TODO: make it faster
 ; *********************************************************************************************
 
 ; *********************************************************************************************
@@ -90,22 +90,7 @@ cell_row_loop:  MIW 0x0000, grid_current_x      ; start at x 0
 
                 ; start of col loop
 
-cell_col_loop:  MWV grid_current_x, xa          ; set xa
-                AIB 0x05, xa                    ; add 5 to xa
-                MBB grid_current_y, ya          ; set ya
-                AIW 0x05, ya                    ; add 5 to ya
-                LDR cell_addr                   ; load cell info byte
-                CPI 0x00                        ; check if zero
-                BEQ cell_b                      ;
-
-                ; check and store current cell state
-
-cell_w:         MIB 0x01, cell_current          ; set current cell is white
-                JAS _SetPixel                   ; set pixel white
-                JPA maybe_ant                   ;
-cell_b:         MIB 0x00, cell_current          ; set current cell is black
-                JAS _ClearPixel                 ; set pixel black
-                JPA maybe_ant                   ;
+cell_col_loop:  
 
                 ; check if current grid is where the ant is
 
@@ -116,24 +101,37 @@ maybe_ant:      CBB ant_x+1, grid_current_x+1   ; compare ant to current x grid 
                 CBB ant_y, grid_current_y       ; compare ant to current y grid
                 BNE no_ant                      ;
 
-                ; check colour of cell and update ant direction
+                ; set pixel location
 
-check_cell:     CIB 0x00, cell_current          ; check colour of cell
+                MWV grid_current_x, xa          ; set xa
+                AIB 0x05, xa                    ; add 5 to xa
+                MBB grid_current_y, ya          ; set ya
+                AIW 0x05, ya                    ; add 5 to ya
+
+                ; check cell pointer for cell colour
+
+                LDR cell_addr                   ; load cell info byte
+                CPI 0x00                        ; check if zero
                 BEQ cell_black                  ;
 
+                ; set pixel colour and update ant direction
+                ;     only sets the pixel when the ant moves over the cell
+
 cell_white:     MIR 0x00, cell_addr             ; update cell to black
+                JAS _ClearPixel                 ; set pixel black
                 INB ant_direction               ; update ant direction (turn right)
                 CIB 0x04, ant_direction         ; compare for overflow
                 BNE draw_ant                    ; skip if not overflow
                 MIB 0x00, ant_direction         ; reset if overflow
-
                 JPA draw_ant                    ;
 
 cell_black:     MIR 0x01, cell_addr             ; update cell to white
+                JAS _SetPixel                   ; set pixel white
                 DEB ant_direction               ; update ant direction (turn left)
                 CIB 0xff, ant_direction         ; compare for underflow
                 BNE draw_ant                    ; skip if not underflow
                 MIB 0x03, ant_direction         ; reset if underflow
+                JPA draw_ant                    ;
 
                 ; draw the ant
 
@@ -147,6 +145,7 @@ draw_ant:       ;MBB ant_x, xa                   ; do not draw ant, needs to be 
                 ;JAS _Rect                       ;
 
                 ; copy the ant location
+                ;    we update the ant after the loops are done so it doesn't upset the logic
 
 maybe_done:     MBB ant_x+1, nxt_x+1            ;
                 MBB ant_x, nxt_x                ;
