@@ -163,10 +163,17 @@ ant_check_n:    CIB 0x00, ant_direction         ; check if facing north
                 BNE no_ant                      ;
                 MIB 0xe6, nxt_y                 ; set next y to 0xe6 (230)
                 JPA no_ant                      ;
+
 ant_check_e:    CIB 0x01, ant_direction         ; check if facing east
                 BNE ant_check_s                 ;
-                AIW 0x0a, nxt_x                 ; TODO: wrap screen
+                AIW 0x0a, nxt_x                 ;
+                CIB 0x01, nxt_x+1               ; is x+1 0x01 MSB of 0x190 (400)
+                BNE no_ant                      ;
+                CIB 0x90, nxt_x                 ; is x 0x90 LSB of 0x0190 (400)
+                BNE no_ant                      ;
+                MIW 0x0000, nxt_x               ; set next x to 0x0000 (0)
                 JPA no_ant                      ;
+
 ant_check_s:    CIB 0x02, ant_direction         ; check if facing south
                 BNE ant_check_w                 ;
                 AIB 0x0a, nxt_y                 ;
@@ -174,9 +181,15 @@ ant_check_s:    CIB 0x02, ant_direction         ; check if facing south
                 BNE no_ant                      ;
                 MIB 0x00, nxt_y                 ; set next y to 0x00 (0)
                 JPA no_ant                      ;
+
 ant_check_w:    CIB 0x03, ant_direction         ; check if facing west, we shouldn't really need to check
                 BNE no_ant                      ;
-                SIW 0x0a, nxt_x                 ; TODO: wrap screen
+                SIW 0x0a, nxt_x                 ;
+                CIB 0xff, nxt_x+1               ; is x+1 0xff MSB of 0xfff6 (0-10)
+                BNE no_ant                      ;
+                CIB 0xf6, nxt_x                 ; is x 0xf6 LSB of 0xfff6 (0-10)
+                BNE no_ant                      ;
+                MIW 0x0186, nxt_x               ; set next x to 0x0186 (390)
                 JPA no_ant                      ;
 
                 ; increment the cell address pointer and check if we need to continue the loop
