@@ -23,7 +23,9 @@
 
                 JAS clear_cells                 ; clear memory for cells
 
-                MIW 0x0000, max_steps           ; set max steps to zero
+                MIW 0x2997, max_steps           ; set max steps (https://mathworld.wolfram.com/LangtonsAnt.html)
+                ;MIW 0x0182, max_steps           ; set max steps (https://mathworld.wolfram.com/LangtonsAnt.html)
+                MIW 0x0000, step_count          ; reset step count to zero
                 MIW 0x00c8, ant_x               ; ant at x=200 pixels
                 MIB 0x78, ant_y                 ; ant at y=120 pixels
                 MIB 0, ant_direction            ; ant facing 0 (north)
@@ -39,10 +41,10 @@
 
 loop:           JAS draw_cells                  ; draw the cells and do the ant logic
 
-                INW max_steps                   ; increment steps
-                CIB 0x01, max_steps+1           ; check 0x0182 MSB (386)
+                INW step_count                  ; increment steps
+                CBB max_steps+1, step_count+1   ; check MSB
                 BNE loop                        ; continue loop
-                CIB 0x82, max_steps             ; check 0x0182 LSB (386)
+                CBB max_steps, step_count       ; check LSB
                 BNE loop                        ; continue loop
 
                 JPA _Prompt                     ; exit
@@ -250,9 +252,9 @@ grid_current_x: 0xffff                          ; draw grid routine x
 grid_current_y: 0xff                            ; draw grid routine y
 
 cell_addr:      0xffff                          ; cell address
-cell_current:   0xff
 
-max_steps:      0xffff                          ; step counter
+step_count:     0xffff                          ; step counter
+max_steps:      0xffff                          ; max steps
 
 #org 0x1100
 
