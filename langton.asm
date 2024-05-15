@@ -230,9 +230,9 @@ move_ant:       MBB nxt_x+1, ant_x+1            ; move the ant x MSB
 ; *********************************************************************************************
 
 fill_cell:      MWV grid_current_x, xa          ; copy x to pixel x
-                MIB 0x00, xc                    ; reset x counter
-fill_loop_x:    MIB 0x00, yc                    ; copy y to pixel y
-                MBZ grid_current_y, ya          ; reset y counter
+                MIZ 0x00, xc                    ; reset x counter
+fill_loop_x:    MBZ grid_current_y, ya          ; copy y to pixel y
+                MIZ 0x00, yc                    ; reset y counter
 fill_loop_y:    LDR cell_addr                   ; load cell info byte
                 CPI 0x00                        ; check if zero
                 BEQ fill_black                  ; if byte is zero black else white
@@ -242,13 +242,13 @@ fill_white:     JPS _SetPixel                   ; set pixel
 fill_black:     JPS _ClearPixel                 ; clear pixel
                 JPA fill_loop_end               ; jump to end of loop
 
-fill_loop_end:  INB yc                          ; increment y counter
+fill_loop_end:  INZ yc                          ; increment y counter
                 INZ ya                          ; increment y pixel
-                CBB cell_size, yc               ; check if reached cell_size
+                CBZ cell_size, yc               ; check if reached cell_size
                 BNE fill_loop_y                 ; continue loop
-                INB xc                          ; increment x counter
+                INZ xc                          ; increment x counter
                 INV xa                          ; increment x pixel
-                CBB cell_size, xc               ; check if reached cell_size
+                CBZ cell_size, xc               ; check if reached cell_size
                 BNE fill_loop_x                 ; continue loop
 
 fill_done:      RTS                             ; return
