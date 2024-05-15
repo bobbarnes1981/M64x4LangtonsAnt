@@ -70,7 +70,7 @@ draw_grid:
                 MIB 0x00, grid_current_y        ; set current y to 0
                 ABB cell_size, grid_current_y   ;
 grid_y_loop:    MIV 0x0000, xa                  ; set line start x = 0
-                MBB grid_current_y, ya          ; set line start y = grid_current_y
+                MBZ grid_current_y, ya          ; set line start y = grid_current_y
                 MBZ screen_w+1, xb+1            ; set line end x = screen_w
                 MBZ screen_w, xb                ; set line end x = screen_w
                 MBB grid_current_y, yb          ; set line end y = grid_current_y
@@ -82,7 +82,7 @@ grid_y_loop:    MIV 0x0000, xa                  ; set line start x = 0
                 MIW 0x0000, grid_current_x      ; set current x to 0
                 ABW cell_size, grid_current_x   ;
 grid_x_loop:    MWV grid_current_x, xa          ; set line start x = grid_current_x
-                MIB 0x00, ya                    ; set line start y = 0
+                MIZ 0x00, ya                    ; set line start y = 0
                 MWV grid_current_x, xb          ; set line end x = grid_current_x
                 MBB screen_h, yb                ; set line end y = screen_h
                 JAS _Line                       ; draw line
@@ -232,7 +232,7 @@ move_ant:       MBB nxt_x+1, ant_x+1            ; move the ant x MSB
 fill_cell:      MWV grid_current_x, xa          ; copy x to pixel x
                 MIB 0x00, xc                    ; reset x counter
 fill_loop_x:    MIB 0x00, yc                    ; copy y to pixel y
-                MBB grid_current_y, ya          ; reset y counter
+                MBZ grid_current_y, ya          ; reset y counter
 fill_loop_y:    LDR cell_addr                   ; load cell info byte
                 CPI 0x00                        ; check if zero
                 BEQ fill_black                  ; if byte is zero black else white
@@ -243,7 +243,7 @@ fill_black:     JPS _ClearPixel                 ; clear pixel
                 JPA fill_loop_end               ; jump to end of loop
 
 fill_loop_end:  INB yc                          ; increment y counter
-                INB ya                          ; increment y pixel
+                INZ ya                          ; increment y pixel
                 CBB cell_size, yc               ; check if reached cell_size
                 BNE fill_loop_y                 ; continue loop
                 INB xc                          ; increment x counter
