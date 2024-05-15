@@ -24,8 +24,6 @@
 
                 #org 0x2000                     ; set origin
 
-                JAS clear_cells                 ; clear memory for cells
-
                 MIW 0x0190, screen_w            ; 0x0190 (400)
                 MIB 0xf0, screen_h              ; 0xf0 (240)
 
@@ -42,6 +40,7 @@
                 MIW 0x00c8, ant_x               ; ant at x=200 pixels
                 MIB 0x78, ant_y                 ; ant at y=120 pixels
 
+                JAS clear_cells                 ; clear memory for cells
                 JAS _Clear                      ; clear display
                 ;JAS draw_grid                   ; draw the grid outside loop, it is slow/flickers
 
