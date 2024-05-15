@@ -35,7 +35,7 @@
                 MIB 0x05, cell_size             ; cell size is 5 pixels 80x48
                 ;MIB 0x0a, cell_size             ; cell size is ten pixels 40x24
 
-                MIW 0x0000, step_count          ; reset step count to zero
+                CLW step_count                  ; reset step count to zero
                 
                 MIB 0, ant_direction            ; ant facing 0 (north)
 
@@ -67,9 +67,9 @@ loop:           JAS draw_cells                  ; draw the cells and do the ant 
 
 draw_grid:
 
-                MIB 0x00, grid_current_y        ; set current y to 0
+                CLB grid_current_y              ; set current y to 0
                 ABB cell_size, grid_current_y   ;
-grid_y_loop:    MIV 0x0000, xa                  ; set line start x = 0
+grid_y_loop:    CLV xa                          ; set line start x = 0
                 MBZ grid_current_y, ya          ; set line start y = grid_current_y
                 MBZ screen_w+1, xb+1            ; set line end x = screen_w
                 MBZ screen_w, xb                ; set line end x = screen_w
@@ -79,10 +79,10 @@ grid_y_loop:    MIV 0x0000, xa                  ; set line start x = 0
                 CBB screen_h, grid_current_y    ; compare to screen_h
                 BNE grid_y_loop                 ; loop if not zero
 
-                MIW 0x0000, grid_current_x      ; set current x to 0
+                CLW grid_current_x              ; set current x to 0
                 ABW cell_size, grid_current_x   ;
 grid_x_loop:    MWV grid_current_x, xa          ; set line start x = grid_current_x
-                MIZ 0x00, ya                    ; set line start y = 0
+                CLZ ya                          ; set line start y = 0
                 MWV grid_current_x, xb          ; set line end x = grid_current_x
                 MBZ screen_h, yb                ; set line end y = screen_h
                 JAS _Line                       ; draw line
@@ -99,11 +99,11 @@ grid_x_loop:    MWV grid_current_x, xa          ; set line start x = grid_curren
 ; *********************************************************************************************
 
 draw_cells:     MIW 0x1100, cell_addr           ; current cell array address
-                MIB 0x00, grid_current_y        ; start at y 0
+                CLB grid_current_y              ; start at y 0
 
                 ; start of row loop
 
-cell_row_loop:  MIW 0x0000, grid_current_x      ; start at x 0
+cell_row_loop:  CLW grid_current_x              ; start at x 0
 
                 ; start of col loop
 
@@ -174,7 +174,7 @@ ant_check_e:    CIB 0x01, ant_direction         ; check if facing east
                 BNE no_ant                      ;
                 CBB screen_w, nxt_x             ; is x screen_w LSB
                 BNE no_ant                      ;
-                MIW 0x0000, nxt_x               ; set next x to 0x0000 (0)
+                CLW nxt_x                       ; set next x to 0x0000 (0)
                 JPA no_ant                      ;
 
 ant_check_s:    CIB 0x02, ant_direction         ; check if facing south
@@ -183,7 +183,7 @@ ant_check_s:    CIB 0x02, ant_direction         ; check if facing south
                 ; wrap screen
                 CBB screen_h, nxt_y             ; is y screen_h
                 BNE no_ant                      ;
-                MIB 0x00, nxt_y                 ; set next y to 0x00 (0)
+                CLB nxt_y                       ; set next y to 0x00 (0)
                 JPA no_ant                      ;
 
 ant_check_w:    CIB 0x03, ant_direction         ; check if facing west, we shouldn't really need to check
@@ -230,9 +230,9 @@ move_ant:       MBB nxt_x+1, ant_x+1            ; move the ant x MSB
 ; *********************************************************************************************
 
 fill_cell:      MWV grid_current_x, xa          ; copy x to pixel x
-                MIZ 0x00, xc                    ; reset x counter
+                CLZ xc                          ; reset x counter
 fill_loop_x:    MBZ grid_current_y, ya          ; copy y to pixel y
-                MIZ 0x00, yc                    ; reset y counter
+                CLZ yc                          ; reset y counter
 fill_loop_y:    LDR cell_addr                   ; load cell info byte
                 CPI 0x00                        ; check if zero
                 BEQ fill_black                  ; if byte is zero black else white
@@ -258,8 +258,8 @@ fill_done:      RTS                             ; return
 ; *********************************************************************************************
 
 clear_cells:    MIW 0x1100, cell_addr           ; start form beginning of grid ram
-                MIB 0x00, grid_current_y        ; start at y 0
-clear_row_loop: MIW 0x0000, grid_current_x      ; start at x 0
+                CLB grid_current_y              ; start at y 0
+clear_row_loop: CLW grid_current_x              ; start at x 0
 clear_col_loop: MIR 0x00, cell_addr             ; set byte to 0x00
                 INW cell_addr                   ; increment cell address
                 ABW cell_size, grid_current_x   ; increment grid_current_x by cell_size
