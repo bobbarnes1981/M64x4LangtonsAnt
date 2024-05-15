@@ -69,7 +69,7 @@ draw_grid:
 
                 MIB 0x00, grid_current_y        ; set current y to 0
                 ABB cell_size, grid_current_y   ;
-grid_y_loop:    MIW 0x0000, xa                  ; set line start x = 0
+grid_y_loop:    MIV 0x0000, xa                  ; set line start x = 0
                 MBB grid_current_y, ya          ; set line start y = grid_current_y
                 MBB screen_w+1, xb+1            ; set line end x = screen_w
                 MBB screen_w, xb                ; set line end x = screen_w
@@ -247,7 +247,7 @@ fill_loop_end:  INB yc                          ; increment y counter
                 CBB cell_size, yc               ; check if reached cell_size
                 BNE fill_loop_y                 ; continue loop
                 INB xc                          ; increment x counter
-                INW xa                          ; increment x pixel
+                INV xa                          ; increment x pixel
                 CBB cell_size, xc               ; check if reached cell_size
                 BNE fill_loop_x                 ; continue loop
 
