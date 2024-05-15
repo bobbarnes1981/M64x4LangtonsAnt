@@ -5,7 +5,8 @@
 
 ; *********************************************************************************************
 ; viewport 400x240 pixels
-; 40*24 cells = 960
+; 40*24 cells = 960 (0x03c0)
+; 80*48 cells = 3840 (0x0f00)
 ; RL rule set
 ; white cell : turn right, move forward, set black
 ; black cell : turn left, move forward, set white
@@ -13,7 +14,6 @@
 
 ; *********************************************************************************************
 ; TODO: make it faster
-;       change size of cells
 ; *********************************************************************************************
 
 ; *********************************************************************************************
@@ -24,15 +24,21 @@
 
                 JAS clear_cells                 ; clear memory for cells
 
-                ;MIW 0x2997, max_steps           ; set max steps (https://mathworld.wolfram.com/LangtonsAnt.html)
-                MIW 0x0182, max_steps           ; set max steps (https://mathworld.wolfram.com/LangtonsAnt.html)
-                MIW 0x0000, step_count          ; reset step count to zero
-                MIW 0x00c8, ant_x               ; ant at x=200 pixels
-                MIB 0x78, ant_y                 ; ant at y=120 pixels
-                MIB 0, ant_direction            ; ant facing 0 (north)
-                MIB 0x0a, cell_size             ; cell size is ten pixels
                 MIW 0x0190, screen_w            ; 0x0190 (400)
                 MIB 0xf0, screen_h              ; 0xf0 (240)
+
+                MIW 0x2997, max_steps           ; set max steps (https://mathworld.wolfram.com/LangtonsAnt.html)
+                ;MIW 0x0182, max_steps           ; set max steps (https://mathworld.wolfram.com/LangtonsAnt.html)
+
+                MIB 0x05, cell_size             ; cell size is 5 pixels 80x48
+                ;MIB 0x0a, cell_size             ; cell size is ten pixels 40x24
+
+                MIW 0x0000, step_count          ; reset step count to zero
+                
+                MIB 0, ant_direction            ; ant facing 0 (north)
+
+                MIW 0x00c8, ant_x               ; ant at x=200 pixels
+                MIB 0x78, ant_y                 ; ant at y=120 pixels
 
                 JAS _Clear                      ; clear display
                 ;JAS draw_grid                   ; draw the grid outside loop, it is slow/flickers
@@ -154,7 +160,8 @@ ant_check_n:    CIB 0x00, ant_direction         ; check if facing north
                 ; wrap screen
                 CIB 0xf6, nxt_y                 ; is y 0xf6 (0-10) ?
                 BNE no_ant                      ;
-                MIB 0xe6, nxt_y                 ; set next y to 0xe6 (230)
+                MBB screen_h, nxt_y             ; set next y to screen_h
+                SBB cell_size, nxt_y            ; subtract cell_size
                 JPA no_ant                      ;
 
 ant_check_e:    CIB 0x01, ant_direction         ; check if facing east
@@ -185,7 +192,9 @@ ant_check_w:    CIB 0x03, ant_direction         ; check if facing west, we shoul
                 BNE no_ant                      ;
                 CIB 0xf6, nxt_x                 ; is x 0xf6 LSB of 0xfff6 (0-10)
                 BNE no_ant                      ;
-                MIW 0x0186, nxt_x               ; set next x to 0x0186 (390)
+                MBB screen_w+1, nxt_x+1         ; set next x to screen_w
+                MBB screen_w, nxt_x             ; set next x to screen_w
+                SBW cell_size, nxt_x            ; subtract cell_size
                 JPA no_ant                      ;
 
                 ; increment the cell address pointer and check if we need to continue the loop
