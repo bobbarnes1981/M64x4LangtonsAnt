@@ -141,7 +141,6 @@ cell_black:     MIR 0x01, cell_addr             ; update cell to white
                 CIB 0xff, ant_direction         ; compare for underflow
                 BNE draw_ant                    ; skip if not underflow
                 MIB 0x03, ant_direction         ; reset if underflow
-                JPA draw_ant                    ;
 
                 ; draw the ant
 
@@ -197,7 +196,6 @@ ant_check_w:    CIB 0x03, ant_direction         ; check if facing west, we shoul
                 MBB screen_w+1, nxt_x+1         ; set next x to screen_w
                 MBB screen_w, nxt_x             ; set next x to screen_w
                 SBW cell_size, nxt_x            ; subtract cell_size
-                JPA no_ant                      ;
 
                 ; increment the cell address pointer and check if we need to continue the loop
 
@@ -240,7 +238,6 @@ fill_loop_y:    LDR cell_addr                   ; load cell info byte
 fill_white:     JPS _SetPixel                   ; set pixel
                 JPA fill_loop_end               ; jump to end of loop
 fill_black:     JPS _ClearPixel                 ; clear pixel
-                JPA fill_loop_end               ; jump to end of loop
 
 fill_loop_end:  INZ yc                          ; increment y counter
                 INZ ya                          ; increment y pixel
