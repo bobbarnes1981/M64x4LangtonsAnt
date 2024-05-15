@@ -13,7 +13,7 @@
 
 ; *********************************************************************************************
 ; TODO: make it faster
-;       disable grid and draw cells smaller?
+;       change size of cells
 ; *********************************************************************************************
 
 ; *********************************************************************************************
@@ -31,6 +31,8 @@
                 MIB 0x78, ant_y                 ; ant at y=120 pixels
                 MIB 0, ant_direction            ; ant facing 0 (north)
                 MIB 0x0a, cell_size             ; cell size is ten pixels
+                MIW 0x0190, screen_w            ; 0x0190 (400)
+                MIB 0xf0, screen_h              ; 0xf0 (240)
 
                 JAS _Clear                      ; clear display
                 ;JAS draw_grid                   ; draw the grid outside loop, it is slow/flickers
@@ -52,31 +54,34 @@ loop:           JAS draw_cells                  ; draw the cells and do the ant 
                 JPA _Prompt                     ; exit
 
 ; *********************************************************************************************
-; draw grid subroutine : 400x240 pixels 10 pixels between lines
+; draw grid subroutine
 ; *********************************************************************************************
 
 draw_grid:
 
-                MIB 0x0a, grid_current_y        ; set current y to 10
+                MIB 0x00, grid_current_y        ; set current y to 0
+                ABB cell_size, grid_current_y   ;
 grid_y_loop:    MIW 0x0000, xa                  ; set line start x = 0
                 MBB grid_current_y, ya          ; set line start y = grid_current_y
-                MIW 0x0190, xb                  ; set line end x = 400
+                MBB screen_w+1, xb+1            ; set line end x = screen_w
+                MBB screen_w, xb                ; set line end x = screen_w
                 MBB grid_current_y, yb          ; set line end y = grid_current_y
                 JAS _Line                       ; draw line
                 ABB cell_size, grid_current_y   ; increment grid_current_y by cell_size
-                CIB 0xf0, grid_current_y        ; compare to 0xf0 (decimal 240)
+                CBB screen_h, grid_current_y    ; compare to screen_h
                 BNE grid_y_loop                 ; loop if not zero
 
-                MIW 0x000a, grid_current_x      ; set current x to 10
+                MIW 0x0000, grid_current_x      ; set current x to 0
+                ABW cell_size, grid_current_x   ;
 grid_x_loop:    MWV grid_current_x, xa          ; set line start x = grid_current_x
                 MIB 0x00, ya                    ; set line start y = 0
                 MWV grid_current_x, xb          ; set line end x = grid_current_x
-                MIB 0xf0, yb                    ; set line end y = 240
+                MBB screen_h, yb                ; set line end y = screen_h
                 JAS _Line                       ; draw line
                 ABW cell_size, grid_current_x   ; increment grid_current_x by cell_size
-                CIB 0x01, grid_current_x+1      ; compare MSB to 0x0186 MSB (+10) (decimal 390)
+                CBB screen_w+1, grid_current_x+1; compare MSB to screen_w MSB
                 BNE grid_x_loop                 ; loop if MSB not zero
-                CIB 0x90, grid_current_x        ; compare LSB to 0x0186 LSB (+10) (decimal 390)
+                CBB screen_w, grid_current_x    ; compare LSB to screen_w LSB
                 BNE grid_x_loop                 ; loop if LSB not zero
 
                 RTS                             ;
@@ -132,14 +137,7 @@ cell_black:     MIR 0x01, cell_addr             ; update cell to white
 
                 ; draw the ant
 
-draw_ant:       ;MBB ant_x, xa                   ; do not draw ant, needs to be undrawn somehow
-                ;MBB ant_x+1, xa+1               ;
-                ;INW xa                          ;
-                ;MBB ant_y, ya                   ;
-                ;INB ya                          ;
-                ;MIW 0x0008, xb                  ;
-                ;MIB 0x08, yb                    ;
-                ;JAS _Rect                       ;
+draw_ant:       ; we don't currently draw an ant
 
                 ; copy the ant location
                 ;    we update the ant after the loops are done so it doesn't upset the logic
@@ -163,9 +161,9 @@ ant_check_e:    CIB 0x01, ant_direction         ; check if facing east
                 BNE ant_check_s                 ;
                 ABW cell_size, nxt_x            ; increment x by cell_size
                 ; wrap screen
-                CIB 0x01, nxt_x+1               ; is x+1 0x01 MSB of 0x190 (400)
+                CBB screen_w+1, nxt_x+1         ; is x screen_w MSB
                 BNE no_ant                      ;
-                CIB 0x90, nxt_x                 ; is x 0x90 LSB of 0x0190 (400)
+                CBB screen_w, nxt_x             ; is x screen_w LSB
                 BNE no_ant                      ;
                 MIW 0x0000, nxt_x               ; set next x to 0x0000 (0)
                 JPA no_ant                      ;
@@ -174,7 +172,7 @@ ant_check_s:    CIB 0x02, ant_direction         ; check if facing south
                 BNE ant_check_w                 ;
                 ABB cell_size, nxt_y            ; increment y by cell_size
                 ; wrap screen
-                CIB 0xf0, nxt_y                 ; is y 0xf0 (240) ?
+                CBB screen_h, nxt_y             ; is y screen_h
                 BNE no_ant                      ;
                 MIB 0x00, nxt_y                 ; set next y to 0x00 (0)
                 JPA no_ant                      ;
@@ -197,16 +195,16 @@ no_ant:         INW cell_addr                   ; increment cell address (pointe
                 ; end of col loop
 
                 ABW cell_size, grid_current_x   ; increment grid_current_x by cell_size
-                CIB 0x01, grid_current_x+1      ; compare MSB to 0x0186 MSB
+                CBB screen_w+1, grid_current_x+1; compare MSB to screen_w MSB
                 BNE cell_col_loop               ; continue loop
-                CIB 0x90, grid_current_x        ; compare LSB to 0x0186 LSB (+10)
-                BNE cell_col_loop               ; loop if MSB not zero
+                CBB screen_w, grid_current_x    ; compare LSB to screen_w LSB
+                BNE cell_col_loop               ; continue loop
 
                 ; end of row loop
 
                 ABB cell_size, grid_current_y   ; increment grid_current_y by cell_size
-                CIB 0xf0, grid_current_y        ; compare to 0xf0 (250)
-                BNE cell_row_loop               ; loop if LSB not zero
+                CBB screen_h, grid_current_y    ; compare to screen_h
+                BNE cell_row_loop               ; continue loop
 
                 ; update the ant location after the loop is finished
 
@@ -254,12 +252,12 @@ clear_row_loop: MIW 0x0000, grid_current_x      ; start at x 0
 clear_col_loop: MIR 0x00, cell_addr             ; set byte to 0x00
                 INW cell_addr                   ; increment cell address
                 ABW cell_size, grid_current_x   ; increment grid_current_x by cell_size
-                CIB 0x01, grid_current_x+1      ; compare MSB to 0x0186 MSB (+10) (decimal 400)
+                CBB screen_w+1, grid_current_x+1; compare MSB to screen_w MSB
                 BNE clear_col_loop              ; loop if MSB not zero
-                CIB 0x90, grid_current_x        ; compare LSB to 0x0186 LSB (+10) (decimal 400)
+                CBB screen_w, grid_current_x    ; compare LSB to screen_w LSB
                 BNE clear_col_loop              ; loop if LSB not zero
                 ABB cell_size, grid_current_y   ; increment grid_current_y by cell_size
-                CIB 0xf0, grid_current_y        ; compare to 0xf0 (250)
+                CBB screen_h, grid_current_y    ; compare to screen_h
                 BNE clear_row_loop              ; loop if not zero
                 RTS                             ;
 
@@ -294,6 +292,8 @@ yc:             0xff
 #org 0x1000
 
 cell_size:      0xff                            ;
+screen_w:       0xffff                          ;
+screen_h:       0xff                            ;
 
 ant_x:          0xffff                          ; ant x location
 ant_y:          0xff                            ; ant y location
