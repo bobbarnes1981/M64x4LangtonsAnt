@@ -71,8 +71,8 @@ draw_grid:
                 ABB cell_size, grid_current_y   ;
 grid_y_loop:    MIV 0x0000, xa                  ; set line start x = 0
                 MBB grid_current_y, ya          ; set line start y = grid_current_y
-                MBB screen_w+1, xb+1            ; set line end x = screen_w
-                MBB screen_w, xb                ; set line end x = screen_w
+                MBZ screen_w+1, xb+1            ; set line end x = screen_w
+                MBZ screen_w, xb                ; set line end x = screen_w
                 MBB grid_current_y, yb          ; set line end y = grid_current_y
                 JAS _Line                       ; draw line
                 ABB cell_size, grid_current_y   ; increment grid_current_y by cell_size
