@@ -13,9 +13,12 @@
 ; *********************************************************************************************
 
 ; *********************************************************************************************
-; TODO: make it faster
-;       why loop through the whole grid? can we just check where the ant is and look up the
-;       colour in video RAM?
+; TODO:
+;       > make it faster
+;       > why loop through the whole grid when it only ever changes where the ant is located?
+;           can we just check where the ant is and look up the colour in video RAM?
+;       > 1 byte per cell to store 0/1 is rather inefficient, can this be improved?
+;       > show the step counter in decimal
 ; *********************************************************************************************
 
 ; *********************************************************************************************
@@ -63,6 +66,8 @@ loop:           JAS draw_cells                                  ; draw the cells
                 CPI 'p'                                         ; p to pause
                 BEQ pause                                       ;
 
+                ; show step counter
+
                 MIB 0x00, _XPos                                 ; set print to x=0
                 MIB 0x1d, _YPos                                 ; set print to y=29
                 LDB step_count+1                                ;
@@ -70,11 +75,15 @@ loop:           JAS draw_cells                                  ; draw the cells
                 LDB step_count                                  ;
                 JAS _PrintHex                                   ; print LSB
 
+                ; end of loop
+
 resume:         INW step_count                                  ; increment steps
                 CBB max_steps+1, step_count+1                   ; check MSB
                 BNE loop                                        ; continue loop
                 CBB max_steps, step_count                       ; check LSB
                 BNE loop                                        ; continue loop
+
+                ; exit
 
 exit:           MIB 0x00, _XPos                                 ; set print to x=0
                 MIB 0x01, _YPos                                 ; set print to y=1
@@ -347,7 +356,8 @@ max_steps:      0xffff                                          ; max steps
 
 #org 0x1100
 
-grid:                                                           ; start of grid storage (960 bytes)
+grid:                                                           ; start of grid storage (960 or 3840 bytes)
+                                                                ; uses up to 0x03c0 or 0x0f00
 
 ; *********************************************************************************************
 ; OS API
