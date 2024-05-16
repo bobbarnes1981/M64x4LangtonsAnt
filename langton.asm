@@ -16,6 +16,7 @@
 ; TODO: make it faster
 ;       why loop through the whole grid? can we just check where the ant is and look up the
 ;       colour in video RAM?
+;       check for escape keypress and exit early
 ; *********************************************************************************************
 
 ; *********************************************************************************************
