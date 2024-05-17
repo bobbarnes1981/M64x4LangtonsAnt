@@ -13,4 +13,6 @@ The two simple rules produce emergent behaviour. This referes to seemingly compl
 
 You might expect the ant to produce a simple pattern that repeats. This is true for a short while but the ant then enters a chaotic phase where it appears to move randomly. After a few thousand steps the ant starts to build a 'highway' which, on an infinite grid, would go on forever.
 
+Compile and run in the emulator ```.\Minimal64x4.exe llangton.asm p2000```
+
 ![screenshot](PXL_20240515_184417537~2.jpg)
