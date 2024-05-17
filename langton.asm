@@ -19,6 +19,8 @@
 ;           can we just check where the ant is and look up the colour in video RAM?
 ;       > 1 byte per cell to store 0/1 is rather inefficient, can this be improved?
 ;       > show the step counter in decimal
+;       > allow more ants?
+;       > allow other rules?
 ; *********************************************************************************************
 
 ; *********************************************************************************************
